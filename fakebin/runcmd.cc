@@ -1,21 +1,30 @@
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <unistd.h>
+#if DBG
+#include <stdio.h>
+#endif
+
 int main(int argc, char* argv[])
 {
-  char sh[1024];
-  const char* arg[1024]= {"C:\\cygwin\\bin\\bash.exe", sh};
+  char cmd[10240]= "C:\\cygwin\\bin\\bash.exe ";
   int i;
-  strncpy (sh, getenv("FAKEBIN"), sizeof(sh));
-  strncat (sh, "\\", sizeof(sh));
-  strncat (sh, argv[0], sizeof(sh));
-  strncat (sh, ".sh", sizeof(sh));
-  for (i=1; i<argc; i++) arg[i+1]= argv[i];
-  fprintf (stderr, "+ ");
-  for (i=0; i<argc+1; i++) fprintf (stderr, "%s%c", arg[i], i<argc?' ':'\n');
+  const char* FAKEBIN= getenv("FAKEBIN");
+  if (FAKEBIN) {
+    strncat (cmd, FAKEBIN, sizeof(cmd));
+    strncat (cmd, "\\", sizeof(cmd));
+  }
+  strncat (cmd, argv[0], sizeof(cmd));
+  strncat (cmd, ".sh", sizeof(cmd));
+  for (i=1; i<argc; i++) {
+    strncat (cmd, " ", sizeof(cmd));
+    strncat (cmd, argv[i], sizeof(cmd));
+  }
+#if DBG
+  fprintf (stderr, "+ %s\n", cmd);
   fflush(stderr);
-  int ret= execv (arg[0], (char* const*)arg);
-  perror(arg[0]);
+#endif
+  int ret= system (cmd);
+  if (ret) perror (argv[0]);
   return ret;
 }
