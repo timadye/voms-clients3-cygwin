@@ -1,0 +1,68 @@
+#!/bin/bash
+prog=$(basename "$0")
+case "$prog" in
+  voms-proxy-init*)    class="VomsProxyInit";;
+  voms-proxy-info*)    class="VomsProxyInfo";;
+  voms-proxy-destroy*) class="VomsProxyDestroy";;
+  *) echo "$prog: I don't know which class to use" 2>&1;;
+esac
+verbose=0
+if [ "$1" = "-v" ]; then
+  shift
+  verbose=1
+fi
+dir=$(dirname $(readlink -e "$0"))
+test $(basename "$dir") = "bin" && dir=$(dirname "$dir")
+VOMSCLIENTS_LIBS="$dir/lib"
+# ';' separated list of jars, for the classpath
+VOMSCLIENTS_CP=$(for f in "$VOMSCLIENTS_LIBS"/*.jar; do cygpath -wa "$f"; done | tr '\n' ';')
+# the class implementing voms-proxy-init etc
+VOMSCLIENTS_CLASS="org.italiangrid.voms.clients.$class"
+# JVM options
+VOMS_CLIENTS_JAVA_OPTIONS="-Xmx16m"
+
+setenv() {
+  if [ -n "${!1}" ]; then
+    export $1=$(cygpath -aw "${!1}")
+  else
+    export $1=$(cygpath -aw "$2")
+  fi
+}
+
+setenv X509_USER_CERT   "$HOME/.globus/usercert.pem"
+setenv X509_USER_KEY    "$HOME/.globus/userkey.pem"
+setenv PKCS12_USER_CERT "$HOME/.globus/usercred.p12"
+setenv X509_USER_PROXY  "/tmp/x509up_u$EUID"
+setenv X509_VOMS_DIR    "$dir/grid-security/vomsdir"
+export BASHEXE=$(cygpath -aw "/bin/bash")
+export EUID   # already set in bash; exporting prevents VOMS running useless "id" command
+
+if   [ "$class" = "VomsProxyInit" ]; then
+  if [ -t 0 ]; then
+    stty_orig=$(stty -g)
+    atexit() { /usr/bin/stty $stty_orig; }
+  fi
+  opts=(--certdir $(cygpath -aw "$dir/grid-security/certificates") --vomses $(cygpath -aw "$dir/vomses"))
+elif [ "$class" = "VomsProxyDestroy" ]; then
+  opts=(--file "$X509_USER_PROXY")
+else
+  opts=()
+fi
+
+export PATH="$dir/fakebin:$PATH:"
+export PATH=${PATH//:\/usr\/bin:/:}
+export PATH=${PATH//:\/bin:/:}
+export PATH=${PATH%:}
+test $verbose -ne 0 && /usr/bin/printenv | /usr/bin/grep -e ^X509_ -e ^PKCS12 -e ^EUID= -e ^PATH=
+
+if [ -n "$stty_orig" ]; then
+  trap atexit EXIT
+  test $verbose -ne 0 && echo + \
+  /usr/bin/stty -echo
+  /usr/bin/stty -echo
+fi
+
+test $verbose -ne 0 && set -x
+
+# Run command with java
+java $VOMS_CLIENTS_JAVA_OPTIONS -cp "$VOMSCLIENTS_CP" "$VOMSCLIENTS_CLASS" "${opts[@]}" "$@"
