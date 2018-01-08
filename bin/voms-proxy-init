@@ -11,7 +11,8 @@ if [ "$1" = "-v" ]; then
   shift
   verbose=1
 fi
-dir=$(dirname $(readlink -e "$0"))
+dir=$(readlink -e "$0")
+dir=$(dirname "$dir")
 test $(basename "$dir") = "bin" && dir=$(dirname "$dir")
 VOMSCLIENTS_LIBS="$dir/lib"
 # ';' separated list of jars, for the classpath
