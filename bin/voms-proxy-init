@@ -14,9 +14,9 @@ fi
 dir=$(readlink -e "$0")
 dir=$(dirname "$dir")
 test $(basename "$dir") = "bin" && dir=$(dirname "$dir")
-VOMSCLIENTS_LIBS="$dir/lib"
-# ';' separated list of jars, for the classpath
-VOMSCLIENTS_CP=$(for f in "$VOMSCLIENTS_LIBS"/*.jar; do cygpath -wa "$f"; done | tr '\n' ';')
+export VOMSCLIENTS_LIBS="$dir/lib"
+# ';' separated list of jars, for the classpath. Dummy "set +f" added because Cygwin bash stopped finding anything without it [5/3/2018].
+VOMSCLIENTS_CP=$(set +f; for f in "$VOMSCLIENTS_LIBS"/*.jar; do cygpath -wa "$f"; done | tr '\n' ';')
 # the class implementing voms-proxy-init etc
 VOMSCLIENTS_CLASS="org.italiangrid.voms.clients.$class"
 # JVM options
