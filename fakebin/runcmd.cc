@@ -22,23 +22,23 @@ int main(int argc, char* argv[])
 
   BASHEXE= getenv ("BASHEXE");
   if (!BASHEXE) BASHEXE= "C:\\cygwin\\bin\\bash.exe";
-  strncpy (cmd, BASHEXE, sizeof(cmd));
+  strncpy (cmd, BASHEXE, sizeof(cmd)-1);
 
-  strncat (cmd, " -c \"arg=(", sizeof(cmd));
+  strncat (cmd, " -c \"arg=(", sizeof(cmd)-1);
   for (i=1; i<argc; i++) {
-    if (i>1) strncat (cmd, " ", sizeof(cmd));
-    strncat (cmd, "'", sizeof(cmd));
-    strncat (cmd, argv[i], sizeof(cmd));
-    strncat (cmd, "'", sizeof(cmd));
+    if (i>1) strncat (cmd, " ", sizeof(cmd)-1);
+    strncat (cmd, "'", sizeof(cmd)-1);
+    strncat (cmd, argv[i], sizeof(cmd)-1);
+    strncat (cmd, "'", sizeof(cmd)-1);
   }
-  strncat (cmd, "); for ((i=0; i<${#arg[*]}; i++)); do case \\\"${arg[$i]}\\\" in [A-Z]:/*|*\\\\\\\\*) arg[$i]=$(/usr/bin/cygpath \\\"${arg[$i]}\\\");; esac; done; ", sizeof(cmd));
+  strncat (cmd, "); for ((i=0; i<${#arg[*]}; i++)); do case \\\"${arg[$i]}\\\" in [A-Z]:/*|*\\\\\\\\*) arg[$i]=$(/usr/bin/cygpath \\\"${arg[$i]}\\\");; esac; done; ", sizeof(cmd)-1);
 #if DBG
-  strncat (cmd, "set -x; ", sizeof(cmd));
+  strncat (cmd, "set -x; ", sizeof(cmd)-1);
 #endif
 
-  strncat (cmd, "exec /usr/bin/", sizeof(cmd));
-  strncat (cmd, prog, sizeof(cmd));
-  strncat (cmd, " \\\"${arg[@]}\\\"\"", sizeof(cmd));
+  strncat (cmd, "exec /usr/bin/", sizeof(cmd)-1);
+  strncat (cmd, prog, sizeof(cmd)-1);
+  strncat (cmd, " \\\"${arg[@]}\\\"\"", sizeof(cmd)-1);
 
 #if DBG
   fprintf (stderr, "+ %s\n", cmd);
